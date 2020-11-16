@@ -413,12 +413,37 @@ public class JDKScalarsTest
         double value = Double.POSITIVE_INFINITY;
         DoubleBean result = MAPPER.readValue("{\"v\":\""+value+"\"}", DoubleBean.class);
         assertEquals(value, result._v);
-        
+
         // should work with arrays too..
         double[] array = MAPPER.readValue("[ \"Infinity\" ]", double[].class);
         assertNotNull(array);
         assertEquals(1, array.length);
         assertEquals(Double.POSITIVE_INFINITY, array[0]);
+    }
+
+    public void testDoublePrimitiveNonNumericCoercionDisabled() throws Exception
+    {
+        ObjectMapper mapper = MAPPER.copy()
+                .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
+                .enable(JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS);
+        // first, simple case:
+        // bit tricky with binary fps but...
+        double value = Double.POSITIVE_INFINITY;
+        DoubleBean result = mapper.readValue("{\"v\":\""+value+"\"}", DoubleBean.class);
+        assertEquals(value, result._v);
+
+        // should work with arrays too..
+        double[] array = mapper.readValue("[ \"Infinity\" ]", double[].class);
+        assertNotNull(array);
+        assertEquals(1, array.length);
+        assertEquals(Double.POSITIVE_INFINITY, array[0]);
+
+        try {
+            mapper.readValue("[ \"1.2\" ]", double[].class);
+            fail("Expected a MismatchedInputException");
+        } catch (MismatchedInputException e) {
+            // expected
+        }
     }
     
     public void testFloatPrimitiveNonNumeric() throws Exception
